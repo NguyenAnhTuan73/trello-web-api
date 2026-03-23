@@ -1,31 +1,46 @@
-import { mapOrder } from "~/utils/sorts.js";
+/* eslint-disable no-console */
+import exitHook from "async-exit-hook";
+import { CLOSE_DB, CONNECT_DB } from "~/config/mongodb";
+import "dotenv/config";
+import { env } from "~/config/environment";
+import { APIs_V1 } from "~/routes/v1";
 const express = require("express");
+const START_SERVER = () => {
+  const app = express();
+  app.use(express.json());
+  app.use("/v1", APIs_V1);
 
-const app = express();
+  const server = app.listen(env.APP_PORT, env.APP_HOST, () => {
+    // eslint-disable-next-line no-console
+  });
+  exitHook(async (callback) => {
+    console.log("🔻 Shutting down server...");
 
-const hostname = "localhost";
-const port = 8073;
+    try {
+      // 1. Close HTTP server
+      server.close(() => {
+        console.log("HTTP server closed");
+      });
 
-app.get("/", (req, res) => {
-  // Test Absolute import mapOrder
-  // eslint-disable-next-line no-console
-  console.log(
-    mapOrder(
-      [
-        { id: "id-1", name: "One" },
-        { id: "id-2", name: "Two" },
-        { id: "id-3", name: "Three" },
-        { id: "id-4", name: "Four" },
-        { id: "id-5", name: "Five" },
-      ],
-      ["id-5", "id-4", "id-2", "id-3", "id-1"],
-      "id",
-    ),
-  );
-  res.end("<h1>Hello World!</h1><hr>");
-});
+      // 2. Close MongoDB
+      await CLOSE_DB();
+      console.log("MongoDB disconnected");
 
-app.listen(port, hostname, () => {
-  // eslint-disable-next-line no-console
-  console.log(`Hello  I am running at ${hostname}:${port}/`);
-});
+      callback();
+    } catch (err) {
+      console.error("Shutdown error:", err);
+      callback();
+    }
+  });
+};
+(async () => {
+  try {
+    console.log("1.Connected to MongoDB");
+    await CONNECT_DB();
+    console.log("2.Connected to MongoDB");
+    START_SERVER();
+  } catch (error) {
+    console.log(error);
+    process.exit(0);
+  }
+})();
