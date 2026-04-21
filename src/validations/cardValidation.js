@@ -1,0 +1,35 @@
+import { StatusCodes } from "http-status-codes"
+import Joi from "joi"
+import ApiError from "~/utils/ApiError"
+import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from "~/utils/validators"
+
+const creatNew = async (req, res, next) => {
+  const conditionsReq = Joi.object({
+    boardId: Joi.string()
+      .required()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE),
+    columnId: Joi.string()
+      .required()
+      .pattern(OBJECT_ID_RULE)
+      .message(OBJECT_ID_RULE_MESSAGE),
+
+    title: Joi.string().required().min(3).max(50).trim().strict(),
+  })
+  try {
+    // abortEarly:false --> trả ra tất cả các lỗi validations
+
+    await conditionsReq.validateAsync(req.body, { abortEarly: false })
+    // validate xong thì req chạy tiếp sang controller
+    next()
+  } catch (error) {
+    next(
+      new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message),
+    )
+
+    // res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
+    //   errors: new Error(error).message,
+    // });
+  }
+}
+export const cardValidation = { creatNew }

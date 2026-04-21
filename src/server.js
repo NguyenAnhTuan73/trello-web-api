@@ -4,11 +4,18 @@ import { CLOSE_DB, CONNECT_DB } from "~/config/mongodb";
 import "dotenv/config";
 import { env } from "~/config/environment";
 import { APIs_V1 } from "~/routes/v1";
+import { errorHandlingMiddleware } from "~/middlewares/errorHandlingMiddleware";
+import { corsOptions } from "~/config/cors";
 const express = require("express");
+const cors = require("cors");
 const START_SERVER = () => {
   const app = express();
   app.use(express.json());
+
+  app.use(cors(corsOptions));
   app.use("/v1", APIs_V1);
+  // Middleware xử lý lỗi tập trung
+  app.use(errorHandlingMiddleware);
 
   const server = app.listen(env.APP_PORT, env.APP_HOST, () => {
     // eslint-disable-next-line no-console
