@@ -3,6 +3,7 @@ import { cardService } from "~/services/cardService"
 const createNew = async (req, res, next) => {
   try {
     const createCard = await cardService.createNew(req.body)
+    console.log("🚀 ~ createNew ~ createCard:", createCard)
     res.status(StatusCodes.CREATED).json(createCard)
     // throw new Error("Test error");
   } catch (error) {

@@ -5,6 +5,7 @@ import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from "~/utils/validators"
 
 const creatNew = async (req, res, next) => {
   const conditionsReq = Joi.object({
+    title: Joi.string().required().min(3).max(50).trim().strict(),
     boardId: Joi.string()
       .required()
       .pattern(OBJECT_ID_RULE)
@@ -13,8 +14,6 @@ const creatNew = async (req, res, next) => {
       .required()
       .pattern(OBJECT_ID_RULE)
       .message(OBJECT_ID_RULE_MESSAGE),
-
-    title: Joi.string().required().min(3).max(50).trim().strict(),
   })
   try {
     // abortEarly:false --> trả ra tất cả các lỗi validations

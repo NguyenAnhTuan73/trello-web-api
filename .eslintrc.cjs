@@ -11,6 +11,7 @@ module.exports = {
   plugins: [],
   rules: {
     // Common
+    "no-useless-catch": 0,
     "no-console": 1,
     "no-extra-boolean-cast": 0,
     "no-lonely-if": 1,
@@ -30,5 +31,6 @@ module.exports = {
     "comma-dangle": ["error", "always-multiline"],
     "comma-spacing": 1,
     "arrow-spacing": 1,
+    "prettier.printWidth": 120,
   },
-};
+}

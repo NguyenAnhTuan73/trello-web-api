@@ -1,21 +1,15 @@
 import Joi from "joi"
+import { ObjectId } from "mongodb"
 import { GET_DB } from "~/config/mongodb"
 import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from "~/utils/validators"
 
 // Define Collection (name & schema)
 const COLUMN_COLLECTION_NAME = "columns"
-
+const INVALIED_UPDATE_FIELDS = ["_id", "createdAt", "boardId"]
 const COLUMN_COLLECTION_SCHEMA = Joi.object({
-  boardId: Joi.string()
-    .required()
-    .pattern(OBJECT_ID_RULE)
-    .message(OBJECT_ID_RULE_MESSAGE),
   title: Joi.string().required().min(3).max(50).trim().strict(),
-
-  cardOrderIds: Joi.array()
-    .items(Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE))
-    .default([]),
-
+  boardId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
+  cardOrderIds: Joi.array().items(Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)).default([]),
   createdAt: Joi.date().timestamp("javascript").default(Date.now),
   updatedAt: Joi.date().timestamp("javascript").default(null),
   _destroy: Joi.boolean().default(false),
@@ -30,10 +24,19 @@ const validateBeforeCreate = async (data) => {
 const createNew = async (data) => {
   try {
     const validData = await validateBeforeCreate(data)
+    const newColumnToAdd = {
+      ...validData,
+      boardId: new ObjectId(validData.boardId),
+    }
     // eslint-disable-next-line no-console
-    return await GET_DB()
-      .collection(COLUMN_COLLECTION_NAME)
-      .insertOne(validData)
+    return await GET_DB().collection(COLUMN_COLLECTION_NAME).insertOne(newColumnToAdd)
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+const listColumns = async () => {
+  try {
+    return await GET_DB().collection(COLUMN_COLLECTION_NAME).find({ _destroy: false }).toArray()
   } catch (error) {
     throw new Error(error)
   }
@@ -48,9 +51,69 @@ const findOneById = async (id) => {
   }
 }
 
+const pushCardOrderIds = async (card) => {
+  try {
+    const result = await GET_DB()
+      .collection(COLUMN_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: card.columnId },
+        { $push: { cardOrderIds: new ObjectId(card._id) } },
+        { returnDocument: "after" },
+      )
+    return result || null
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const update = async (id, updateData) => {
+  try {
+    Object.keys(updateData).forEach((key) => {
+      if (INVALIED_UPDATE_FIELDS.includes(key)) {
+        delete updateData[key]
+      }
+    })
+    updateData.updatedAt = Date.now()
+    if (updateData.cardOrderIds) {
+      updateData.cardOrderIds = updateData.cardOrderIds.map((id) => new ObjectId(id))
+    }
+    const result = await GET_DB()
+      .collection(COLUMN_COLLECTION_NAME)
+      .findOneAndUpdate(
+        {
+          _id: new ObjectId(id),
+        },
+        {
+          $set: updateData,
+        },
+        {
+          returnDocument: "after",
+        },
+      )
+    return result || null
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+const deleteByOneId = async (columnId) => {
+  try {
+    const result = await GET_DB()
+      .collection(COLUMN_COLLECTION_NAME)
+      .deleteOne({ _id: new ObjectId(columnId) })
+
+    return result || null
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
 export const columnModel = {
   COLUMN_COLLECTION_NAME,
   COLUMN_COLLECTION_SCHEMA,
   createNew,
   findOneById,
+  listColumns,
+  pushCardOrderIds,
+  update,
+  deleteByOneId,
 }

@@ -4,15 +4,14 @@ import { boardModel } from "~/models/boardModel"
 import ApiError from "~/utils/ApiError"
 import { slugify } from "~/utils/formatter"
 import { cloneDeep } from "lodash"
+import { cardModel } from "~/models/cardModel"
+import { columnModel } from "~/models/columnModel"
 
 const createNew = async (reqBody) => {
   try {
     const newBoard = { ...reqBody, slug: slugify(reqBody.title) }
-
     const createdBoard = await boardModel.createNew(newBoard)
-
     const getNewBoard = await boardModel.findOneById(createdBoard.insertedId)
-
     return getNewBoard
     // throw new ApiError(StatusCodes.FORBIDDEN, "something wrong");
   } catch (error) {
@@ -27,9 +26,7 @@ const getDetails = async (id) => {
     }
     const resBoard = cloneDeep(getDataDetails)
     resBoard.columns.forEach((column) => {
-      column.cards = resBoard.cards.filter(
-        (card) => card.columnId.toString() === column._id.toString(),
-      )
+      column.cards = resBoard.cards.filter((card) => card.columnId.toString() === column._id.toString())
     })
     delete resBoard.cards
     return resBoard
@@ -37,4 +34,38 @@ const getDetails = async (id) => {
     console.log(error)
   }
 }
-export const boardService = { createNew, getDetails }
+const update = async (id, updateData) => {
+  try {
+    const updatedData = { ...updateData, updatedAt: Date.now() }
+
+    const updatedBoard = await boardModel.update(id, updatedData)
+    return updatedBoard
+  } catch (error) {
+    console.log(error)
+  }
+}
+const moveCardToDifferentColumn = async (reqBody) => {
+  console.log("reqBody", reqBody)
+  try {
+    await columnModel.update(reqBody.prevColumnId, {
+      cardOrderIds: reqBody.prevCardOrderIds,
+      updatedAt: Date.now(),
+    })
+    await columnModel.update(reqBody.nextColumnId, {
+      cardOrderIds: reqBody.nextCardOrderIds,
+      updatedAt: Date.now(),
+    })
+    await cardModel.update(reqBody.currentCardId, {
+      columnId: reqBody.nextColumnId,
+      
+    })
+    // const updatedData = { ...updateData, updatedAt: Date.now() }
+
+    // const updatedBoard = await boardModel.moveCardToDifferentColumn(reqBody)
+    // return updatedBoard
+    return { updateResult: "Successfully" }
+  } catch (error) {
+    console.log(error)
+  }
+}
+export const boardService = { createNew, getDetails, update, moveCardToDifferentColumn }
