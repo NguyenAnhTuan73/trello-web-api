@@ -70,7 +70,7 @@ const deleteCardsByColumnId = async (columnId) => {
     const result = await GET_DB()
       .collection(CARD_COLLECTION_NAME)
       .deleteMany({ columnId: new ObjectId(columnId) })
-    console.log("result deleteCardsByColumnId", result)
+
     return result || null
   } catch (error) {
     throw new Error(error)

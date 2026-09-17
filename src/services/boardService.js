@@ -45,7 +45,6 @@ const update = async (id, updateData) => {
   }
 }
 const moveCardToDifferentColumn = async (reqBody) => {
-  console.log("reqBody", reqBody)
   try {
     await columnModel.update(reqBody.prevColumnId, {
       cardOrderIds: reqBody.prevCardOrderIds,
@@ -57,12 +56,8 @@ const moveCardToDifferentColumn = async (reqBody) => {
     })
     await cardModel.update(reqBody.currentCardId, {
       columnId: reqBody.nextColumnId,
-      
     })
-    // const updatedData = { ...updateData, updatedAt: Date.now() }
 
-    // const updatedBoard = await boardModel.moveCardToDifferentColumn(reqBody)
-    // return updatedBoard
     return { updateResult: "Successfully" }
   } catch (error) {
     console.log(error)
