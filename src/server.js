@@ -17,28 +17,17 @@ const START_SERVER = () => {
   // Middleware xử lý lỗi tập trung
   app.use(errorHandlingMiddleware)
 
-  const server = app.listen(env.APP_PORT, env.APP_HOST, () => {
-    // eslint-disable-next-line no-console
-  })
-  exitHook(async (callback) => {
-    console.log("🔻 Shutting down server...")
+  if (env.BUILD_MODE === "production") {
+    app.listen(process.env.APP_PORT, process.env.APP_HOST, () => {
+      console.log(`Server is running in production mode on ${process.env.APP_HOST}:${process.env.APP_PORT}`)
+    })
+  } else {
+    app.listen(env.LOCAL_DEV_APP_PORT, env.LOCAL_DEV_APP_HOST, () => {
+      console.log(`Server is running in development mode on ${env.LOCAL_DEV_APP_HOST}:${env.LOCAL_DEV_APP_PORT}`)
+    })
+  }
 
-    try {
-      // 1. Close HTTP server
-      server.close(() => {
-        console.log("HTTP server closed")
-      })
-
-      // 2. Close MongoDB
-      await CLOSE_DB()
-      console.log("MongoDB disconnected")
-
-      callback()
-    } catch (err) {
-      console.error("Shutdown error:", err)
-      callback()
-    }
-  })
+  
 }
 ;(async () => {
   try {
