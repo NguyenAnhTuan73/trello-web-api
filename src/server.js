@@ -26,8 +26,25 @@ const START_SERVER = () => {
       console.log(`Server is running in development mode on ${env.LOCAL_DEV_APP_HOST}:${env.LOCAL_DEV_APP_PORT}`)
     })
   }
+  exitHook(async (callback) => {
+    console.log("🔻 Shutting down server...")
 
-  
+    try {
+      // 1. Close HTTP server
+      server.close(() => {
+        console.log("HTTP server closed")
+      })
+
+      // 2. Close MongoDB
+      await CLOSE_DB()
+      console.log("MongoDB disconnected")
+
+      callback()
+    } catch (err) {
+      console.error("Shutdown error:", err)
+      callback()
+    }
+  })
 }
 ;(async () => {
   try {
